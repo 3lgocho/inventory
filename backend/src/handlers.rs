@@ -1,8 +1,8 @@
-use axum::{extract::State, Json};
+/* use axum::{extract::State, Json};
 use serde::{Deserialize, Serialize};
 use sqlx::MySqlPool;
 use std::collections::HashMap;
-use crate::models::InventarioItem;
+use crate::models::Item;
 
 // Struct para recibir los datos del frontend al mover un equipo
 #[derive(Deserialize)]
@@ -56,3 +56,4 @@ pub async fn mover_inventario(
 
     Ok(Json(serde_json::json!({"mensaje": "Estado/Ubicación actualizada correctamente"})))
 }
+ */

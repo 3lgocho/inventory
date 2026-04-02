@@ -8,7 +8,7 @@ use std::env;
 
 #[tokio::main]
 async fn main() {
-    dotenv().ok();
+/*     dotenv().ok();
 
     let database_url = env::var("DATABASE_URL")
         .expect("Falta definir DATABASE_URL en el archivo .env");
@@ -24,5 +24,5 @@ async fn main() {
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     println!("Servidor Rust corriendo en http://0.0.0.0:3000");
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app).await.unwrap(); */
 }

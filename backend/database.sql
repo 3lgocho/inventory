@@ -5,8 +5,8 @@ CREATE TABLE users (
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     rol VARCHAR(50) NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- 2. Tabla de Items
@@ -18,8 +18,8 @@ CREATE TABLE items (
     ubicacion VARCHAR(50) NOT NULL,
     cantidad INTEGER NOT NULL DEFAULT 0 CHECK (cantidad >= 0), -- Postgres no tiene 'UNSIGNED', usamos CHECK
     stock_minimo INTEGER NOT NULL DEFAULT 0 CHECK (stock_minimo >= 0),
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- 3. Tabla de Movimientos
@@ -30,7 +30,7 @@ CREATE TABLE movimientos (
     cantidad INTEGER NOT NULL CHECK (cantidad > 0),
     tipo VARCHAR(20) NOT NULL,
     motivo TEXT NOT NULL,
-    fecha TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    fecha TIMESTAMPTZ NOT NULL DEFAULT NOW()
     -- Relaciones
     CONSTRAINT fk_item FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE RESTRICT,
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT

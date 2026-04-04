@@ -4,6 +4,9 @@ use sqlx::PgPool;
 use bcrypt::verify;
 use jsonwebtoken::{encode, Header, EncodingKey};
 use chrono::{Utc, Duration};
+use std::env;
+
+use crate::models::Claims;
 
 #[derive(Deserialize)]
 pub struct LoginRequest {
@@ -14,12 +17,6 @@ pub struct LoginRequest {
 #[derive(Serialize)]
 pub struct LoginResponse {
     pub token: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-    sub: String,
-    exp: usize,
 }
 
 pub async fn login_user(
@@ -42,22 +39,28 @@ pub async fn login_user(
     }
 
     let expiration = Utc::now()
-        .checked_add_signed(Duration::hours(24))
+        .checked_add_signed(Duration::hours(6))
         .expect("Timestamp invalido")
         .timestamp() as usize;
 
-    let claims = Claims {
+    let my_claims = Claims {
         sub: payload.email,
         exp: expiration,
     };
 
-    let secret = "mi_secreto_super_seguro_123";
+    let secret = env::var("JWT_SECRET_KEY").unwrap_or_else(|_| 
+        "MTI0OGVjYzc1ZjZlNGY4MzljYmY5ZmRjMzY2NDVkNjFlZDU3YTMwYmU0MGYzYWE2Cg==".to_string());
+
+    // 5. Codificar el token
     let token = encode(
         &Header::default(),
-        &claims,
+        &my_claims,
         &EncodingKey::from_secret(secret.as_ref()),
     )
-    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "No se pudo crear el token".to_string()))?;
+    .map_err(|e| {
+        eprintln!("Error al crear JWT: {}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, "No se pudo crear el token".to_string())
+    })?;
 
     Ok(Json(LoginResponse {token}))
 }

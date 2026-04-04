@@ -1,10 +1,10 @@
 pub mod models;
 pub mod handlers;
 
-use crate::handlers::users::{register_user, login_user};
-use crate::handlers::items::register_handler::create_item;
+use crate::handlers::users::auth_routes;
+use crate::handlers::items::item_routes;
 
-use axum::{routing::{get, post}, Router};
+use axum::{Router};
 use sqlx::postgres::PgPoolOptions;
 use dotenvy::dotenv;
 use std::env;
@@ -27,9 +27,8 @@ async fn main() {
     println!("✅ Conexión a la base de datos exitosa");
 
     let app = Router::new()
-        .route("/auth/register", post(register_user))
-        .route("/auth/login", post(login_user))
-        .route("/items/register", post(create_item))
+        .nest("/auth", auth_routes())
+        .nest("/items", item_routes())
         //.route("/", get(|| async { "Inventario IT API Corriendo" }))
         .with_state(pool);
 

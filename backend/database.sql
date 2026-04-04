@@ -1,13 +1,37 @@
-CREATE TABLE IF NOT EXISTS Inventario (
-    ID INT AUTO_INCREMENT PRIMARY KEY,
-    Categoria_Global VARCHAR(255) NOT NULL,
-    Atributos JSON,
-    Ubicacion ENUM('IT', 'Ronnie', 'Deposito', 'En Uso') NOT NULL,
-    Cantidad INT NOT NULL DEFAULT 0,
-    Stock_Minimo INT NOT NULL DEFAULT 0
+-- 1. Tabla de Usuarios
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY, -- Postgres usa SERIAL para el auto-incremento
+    nombre VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    rol VARCHAR(50) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
-INSERT INTO Inventario (Categoria_Global, Atributos, Ubicacion, Cantidad, Stock_Minimo) VALUES
-('Monitor HDMI', '{"marca": "MSI", "pulgadas": 24, "resolucion": "1080p"}', 'IT', 2, 1),
-('Cable de Red', '{"tipo": "Cat6", "longitud": "5m", "color": "azul"}', 'Deposito', 15, 5),
-('Laptop VIT', '{"modelo": "M2420", "ram": "16GB", "os": "Fedora"}', 'En Uso', 1, 1),
-('Destornilladores', '{"tipo": "Kit precision", "piezas": 32}', 'Ronnie', 1, 1);
+
+-- 2. Tabla de Items
+CREATE TABLE items (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    categoria_global VARCHAR(100) NOT NULL,
+    atributos JSONB, -- JSONB es el estándar profesional en Postgres (más rápido)
+    ubicacion VARCHAR(50) NOT NULL,
+    cantidad INTEGER NOT NULL DEFAULT 0 CHECK (cantidad >= 0), -- Postgres no tiene 'UNSIGNED', usamos CHECK
+    stock_minimo INTEGER NOT NULL DEFAULT 0 CHECK (stock_minimo >= 0),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. Tabla de Movimientos
+CREATE TABLE movimientos (
+    id SERIAL PRIMARY KEY,
+    item_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    cantidad INTEGER NOT NULL CHECK (cantidad > 0),
+    tipo VARCHAR(20) NOT NULL,
+    motivo TEXT NOT NULL,
+    fecha TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    -- Relaciones
+    CONSTRAINT fk_item FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+);

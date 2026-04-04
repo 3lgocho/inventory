@@ -20,6 +20,12 @@ pub enum TipoMovimiento {
     Salida,
 }
 
+#[derive(Debug, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "varchar")]
+pub enum UserRole {
+    Admin
+}
+
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Item {
     pub id: i32,
@@ -29,25 +35,29 @@ pub struct Item {
     pub ubicacion: ItemUbicacion, 
     pub cantidad: u32,
     pub stock_minimo: u32,
-    pub actualizado_en: DateTime<Utc>
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Movimiento {
     pub id: i32,
     pub item_id: i32,
+    pub user_id: i32,
     pub cantidad: u32,
     pub tipo: TipoMovimiento,
-    pub encargado: String,
     pub motivo: String,
     pub fecha: DateTime<Utc>
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct User {
     pub id: i32,
     pub nombre: String,
+    pub email: String,
     #[serde(skip_serializing)]
     password: String,
-    pub rol: String,
+    pub rol: UserRole,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }

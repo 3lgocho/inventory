@@ -13,7 +13,7 @@ pub enum ItemUbicacion {
     Ronny
 }
 
-#[derive(Debug, Serialize, Deserialize, sqlx::Type)]
+#[derive(Debug, Serialize, Deserialize, sqlx::Type, Clone, Copy)]
 #[sqlx(type_name = "varchar")]
 pub enum TipoMovimiento {
     Entrada,

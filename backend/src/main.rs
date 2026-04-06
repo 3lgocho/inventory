@@ -3,6 +3,7 @@ pub mod handlers;
 
 use crate::handlers::users::auth_routes;
 use crate::handlers::items::item_routes;
+use crate::handlers::movimientos::movement_routes;
 
 use axum::{Router};
 use sqlx::postgres::PgPoolOptions;
@@ -29,6 +30,7 @@ async fn main() {
     let app = Router::new()
         .nest("/auth", auth_routes())
         .nest("/items", item_routes())
+        .nest("/movement", movement_routes())
         //.route("/", get(|| async { "Inventario IT API Corriendo" }))
         .with_state(pool);
 

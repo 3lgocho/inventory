@@ -38,8 +38,8 @@ pub async fn get_all_items(
             ubicacion: row.ubicacion, // Esto ya viene como ItemUbicacion por el alias en el query!
             cantidad: row.cantidad as u32,      // <--- EL TRUCO: Casteo seguro aquí
             stock_minimo: row.stock_minimo as u32, // <--- EL TRUCO: Casteo seguro aquí
-            created_at: row.created_at,
-            updated_at: row.updated_at,
+            created_at: row.created_at.unwrap(),
+            updated_at: row.updated_at.unwrap(),
         }
     }).collect();
 

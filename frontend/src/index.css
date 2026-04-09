@@ -1,2 +1,23 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+    cursor: default;
+    user-select: none;
+}
+
+/* Permitir selección solo en inputs y áreas de texto */
+input,
+textarea,
+[contenteditable="true"] {
+    cursor: text;
+    user-select: text;
+}
+
+/* Asegurar que los botones y enlaces siempre muestren la mano */
+button,
+a,
+select,
+[role="button"] {
+    cursor: pointer;
+}

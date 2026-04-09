@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LayoutGrid, ClipboardList, Settings, Search, Sun, Moon, Plus } from 'lucide-react';
+import { LayoutGrid, ClipboardList, Settings, Search, Sun, Moon, Plus, User2, UserX2Icon, User2Icon } from 'lucide-react';
 import { obtenerInventario, moverEquipo, crearEquipo } from '../services/api';
 
 export const DashboardInventario = () => {
@@ -79,25 +79,6 @@ export const DashboardInventario = () => {
 
   return (
     <div className="flex min-h-screen bg-white dark:bg-[#191919] text-zinc-900 dark:text-zinc-200 font-sans transition-colors duration-300">
-
-      {/* --- PANEL LATERAL IZQUIERDO --- */}
-      <aside className="w-64 flex flex-col p-6 bg-zinc-50 dark:bg-[#202020] border-r border-zinc-200 dark:border-[#2e2e2e]">
-        <div className="flex items-center gap-3 mb-10 pb-4 border-b border-zinc-200 dark:border-[#2e2e2e]">
-          <span className="text-3xl">📦</span>
-          <h1 className="text-2xl font-bold tracking-tight">Vault</h1>
-        </div>
-        <nav className="flex-1 space-y-1">
-          <a href="#" className="flex items-center gap-3 p-2.5 rounded-md text-sm font-medium bg-zinc-200/50 dark:bg-[#2c2c2c] text-zinc-950 dark:text-zinc-50">
-            <LayoutGrid className="w-5 h-5" /> Inventario
-          </a>
-          <a href="#" className="flex items-center gap-3 p-2.5 rounded-md text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-[#2c2c2c] transition-colors">
-            <ClipboardList className="w-5 h-5" /> Movimientos
-          </a>
-          <a href="#" className="flex items-center gap-3 p-2.5 rounded-md text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-[#2c2c2c] transition-colors">
-            <Settings className="w-5 h-5" /> Configuración
-          </a>
-        </nav>
-      </aside>
 
       {/* --- ÁREA PRINCIPAL --- */}
       <main className="flex-1 p-10 relative">

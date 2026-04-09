@@ -50,8 +50,8 @@ pub async fn create_item(
         ubicacion: row.ubicacion,
         cantidad: row.cantidad as u32,       // <--- Aquí el cast seguro
         stock_minimo: row.stock_minimo as u32, // <--- Aquí el cast seguro
-        created_at: row.created_at,
-        updated_at: row.updated_at,
+        created_at: row.created_at.unwrap(),
+        updated_at: row.updated_at.unwrap(),
     };
 
     Ok(Json(item))

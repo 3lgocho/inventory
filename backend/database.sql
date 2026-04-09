@@ -13,7 +13,7 @@ CREATE TABLE users (
 CREATE TABLE items (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
-    categoria_global VARCHAR(100) NOT NULL,
+    categoria_global VARCHAR(50) NOT NULL,
     atributos JSONB, -- JSONB es el estándar profesional en Postgres (más rápido)
     ubicacion VARCHAR(50) NOT NULL,
     cantidad INTEGER NOT NULL DEFAULT 0 CHECK (cantidad >= 0), -- Postgres no tiene 'UNSIGNED', usamos CHECK
@@ -30,8 +30,22 @@ CREATE TABLE movimientos (
     cantidad INTEGER NOT NULL CHECK (cantidad > 0),
     tipo VARCHAR(20) NOT NULL,
     motivo TEXT NOT NULL,
-    fecha TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     -- Relaciones
     CONSTRAINT fk_item FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE RESTRICT,
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
 );
+
+CREATE INDEX idx_movimientos_created_at ON movimientos (created_at DESC);
+CREATE INDEX idx_items_nombre ON items (nombre);
+
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_items_modtime BEFORE UPDATE ON items FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+CREATE TRIGGER update_users_modtime BEFORE UPDATE ON users FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();

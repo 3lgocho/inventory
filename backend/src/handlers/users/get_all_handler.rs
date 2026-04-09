@@ -1,38 +1,35 @@
 use sqlx::PgPool;
 use axum::{extract::{State, Query}, Json, http::StatusCode};
 
-use crate::models::{Item, ItemCategoria, ItemUbicacion, Pagination, PagedResponse};
 use crate::handlers::users::middleware::AuthUser;
+use crate::models::{UserResponse, UserRole, Pagination, PagedResponse};
 
-pub async fn get_all_items(
+pub async fn get_all_users(
     _auth: AuthUser,
     State(pool): State<PgPool>,
     Query(pag): Query<Pagination>,
-) -> Result<Json<PagedResponse<Item>>, (StatusCode, String)> {
+) -> Result<Json<PagedResponse<UserResponse>>, (StatusCode, String)> {
     let per_page = pag.per_page.unwrap_or(10);
     let page = pag.page.unwrap_or(1);
     let offset = (page - 1) * per_page;
 
-    let total_records = sqlx::query_scalar!("SELECT COUNT(*) FROM items")
+    let total_records = sqlx::query_scalar!("SELECT COUNT(*) FROM users")
         .fetch_one(&pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .unwrap_or(0);
 
-    let items = sqlx::query_as!(
-        Item,
+    let users = sqlx::query_as!(
+        UserResponse,
         r#"
             SELECT
-                id, 
-                nombre, 
-                categoria_global as "categoria_global: ItemCategoria", 
-                atributos, 
-                ubicacion as "ubicacion: ItemUbicacion", 
-                cantidad, 
-                stock_minimo, 
-                created_at, 
+                id,
+                nombre,
+                email,
+                rol as "rol: UserRole",
+                created_at,
                 updated_at
-            FROM items
+            FROM users
             LIMIT $1 OFFSET $2
         "#,
         per_page,
@@ -43,13 +40,13 @@ pub async fn get_all_items(
     .map_err(|e| {
         (StatusCode::INTERNAL_SERVER_ERROR, format!("Error al obtener items: {}", e))
     })?;
-
+    
     let total_pages = (total_records as f64 / per_page as f64).ceil() as i64;
 
     Ok(Json(PagedResponse {
         total_records,
         current_page: page,
         total_pages,
-        data: items,
+        data: users,
     }))
 }

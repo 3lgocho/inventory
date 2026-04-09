@@ -1,8 +1,16 @@
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
-use sqlx::FromRow;
+use sqlx::{FromRow, Type};
 
-#[derive(Debug, Serialize, Deserialize, sqlx::Type)]
+#[derive(Debug, Serialize, Deserialize, Type, Clone, Copy)]
+#[sqlx(type_name = "varchar")]
+pub enum ItemCategoria {
+    Red,
+    Hardware,
+    Complemento,
+}
+
+#[derive(Debug, Serialize, Deserialize, Type, Clone, Copy)]
 #[sqlx(type_name = "varchar")]
 pub enum ItemUbicacion {
     IT,
@@ -13,14 +21,14 @@ pub enum ItemUbicacion {
     Ronny
 }
 
-#[derive(Debug, Serialize, Deserialize, sqlx::Type, Clone, Copy)]
+#[derive(Debug, Serialize, Deserialize, Type, Clone, Copy)]
 #[sqlx(type_name = "varchar")]
 pub enum TipoMovimiento {
     Entrada,
     Salida,
 }
 
-#[derive(Debug, Serialize, Deserialize, sqlx::Type)]
+#[derive(Debug, Serialize, Deserialize, Type, Clone, Copy)]
 #[sqlx(type_name = "varchar")]
 pub enum UserRole {
     Admin
@@ -30,11 +38,11 @@ pub enum UserRole {
 pub struct Item {
     pub id: i32,
     pub nombre: String,
-    pub categoria_global: String,
+    pub categoria_global: ItemCategoria,
     pub atributos: Option<serde_json::Value>,
     pub ubicacion: ItemUbicacion, 
-    pub cantidad: u32,
-    pub stock_minimo: u32,
+    pub cantidad: i32,
+    pub stock_minimo: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -44,10 +52,10 @@ pub struct Movimiento {
     pub id: i32,
     pub item_id: i32,
     pub user_id: i32,
-    pub cantidad: u32,
+    pub cantidad: i32,
     pub tipo: TipoMovimiento,
     pub motivo: String,
-    pub fecha: DateTime<Utc>
+    pub created_at: DateTime<Utc>
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
@@ -56,7 +64,7 @@ pub struct User {
     pub nombre: String,
     pub email: String,
     #[serde(skip_serializing)]
-    password: String,
+    pub password: String,
     pub rol: UserRole,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -66,4 +74,39 @@ pub struct User {
 pub struct Claims {
     pub sub: String,
     pub exp: usize,
+}
+
+#[derive(Serialize)]
+pub struct MovimientoDetallado {
+    pub id: i32,
+    pub item_name: String,
+    pub user_name: String,
+    pub cantidad: i32,
+    pub tipo: TipoMovimiento,
+    pub motivo: String,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Deserialize)]
+pub struct Pagination {
+    pub page: Option<i64>,
+    pub per_page: Option<i64>,
+}
+
+#[derive(serde::Serialize)]
+pub struct PagedResponse<T> {
+    pub total_records: i64,
+    pub current_page: i64,
+    pub total_pages: i64,
+    pub data: Vec<T>,
+}
+
+#[derive(serde::Serialize)]
+pub struct UserResponse {
+    pub id: i32,
+    pub nombre: String,
+    pub email: String,
+    pub rol: UserRole,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }

@@ -2,13 +2,13 @@ use serde::Deserialize;
 use sqlx::PgPool;
 use axum::{extract::State, Json, http::StatusCode};
 
-use crate::models::{Item, ItemUbicacion};
+use crate::models::{Item, ItemCategoria, ItemUbicacion};
 use crate::handlers::users::middleware::AuthUser;
 
 #[derive(Deserialize)]
 pub struct CreateItemRequest {
     pub nombre: String,
-    pub categoria_global: String,
+    pub categoria_global: ItemCategoria,
     pub atributos: Option<serde_json::Value>,
     pub ubicacion: ItemUbicacion, 
     pub cantidad: i32,
@@ -26,12 +26,12 @@ pub async fn create_item(
         r#"
             INSERT INTO items (nombre, categoria_global, atributos, ubicacion, cantidad, stock_minimo)
             VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING id, nombre, categoria_global, atributos, 
+            RETURNING id, nombre, categoria_global as "categoria_global: ItemCategoria", atributos, 
                       ubicacion as "ubicacion: ItemUbicacion", 
                       cantidad, stock_minimo, created_at, updated_at
         "#,
         payload.nombre,
-        payload.categoria_global,
+        payload.categoria_global as ItemCategoria,
         payload.atributos,
         payload.ubicacion as ItemUbicacion,
         payload.cantidad, // Enviamos como i32
@@ -48,8 +48,8 @@ pub async fn create_item(
         categoria_global: row.categoria_global,
         atributos: row.atributos,
         ubicacion: row.ubicacion,
-        cantidad: row.cantidad as u32,       // <--- Aquí el cast seguro
-        stock_minimo: row.stock_minimo as u32, // <--- Aquí el cast seguro
+        cantidad: row.cantidad,      
+        stock_minimo: row.stock_minimo,
         created_at: row.created_at,
         updated_at: row.updated_at,
     };

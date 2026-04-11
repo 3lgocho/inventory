@@ -26,20 +26,20 @@ pub async fn get_item_history(
     let historial = sqlx::query_as!(
         MovimientoDetallado,
         r#"
-        SELECT 
-            m.id,
-            i.nombre as item_name,
-            u.nombre as user_name,
-            m.cantidad,
-            m.tipo as "tipo: TipoMovimiento",
-            m.motivo,
-            m.created_at
-        FROM movimientos m
-        JOIN items i ON m.item_id = i.id
-        JOIN users u ON m.user_id = u.id
-        WHERE m.item_id = $1
-        ORDER BY m.created_at DESC
-        LIMIT $2 OFFSET $3
+            SELECT 
+                m.id,
+                i.nombre as item_name,
+                u.nombre as user_name,
+                m.cantidad,
+                m.tipo as "tipo: TipoMovimiento",
+                m.motivo,
+                m.created_at
+            FROM movimientos m
+            JOIN items i ON m.item_id = i.id
+            JOIN users u ON m.user_id = u.id
+            WHERE m.item_id = $1
+            ORDER BY m.created_at DESC
+            LIMIT $2 OFFSET $3
         "#,
         item_id,
         per_page,

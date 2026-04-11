@@ -24,7 +24,7 @@ pub async fn register_movement(
     let user = sqlx::query!("SELECT id FROM users WHERE email = $1", auth.0.sub)
         .fetch_one(&pool)
         .await
-        .map_err(|e| (StatusCode::UNAUTHORIZED, "Usuario no encontrado".to_string()))?;
+        .map_err(|e| (StatusCode::UNAUTHORIZED, format!("Usuario no encontrado: {}", e)))?;
 
     sqlx::query!(
         r#"

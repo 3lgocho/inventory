@@ -2,15 +2,15 @@ use axum::{extract::{Path, State}, Json, http::StatusCode};
 use serde::Deserialize;
 use sqlx::PgPool;
 
-use crate::models::ItemCategoria;
+use crate::models::ItemCategory;
 use crate::handlers::users::middleware::AuthUser;
 
 #[derive(Deserialize)]
 pub struct UpdateItemRequest {
-    nombre: Option<String>,
-    categoria_global: Option<ItemCategoria>,
-    atributos: Option<serde_json::Value>,
-    stock_minimo: Option<i32>,
+    pub name: Option<String>,
+    pub global_category: Option<ItemCategory>,
+    pub attributes: Option<serde_json::Value>,
+    pub minimum_stock: Option<i32>,
 }
 
 pub async fn update_item(
@@ -19,26 +19,31 @@ pub async fn update_item(
     State(pool): State<PgPool>,
     Json(payload): Json<UpdateItemRequest>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    sqlx::query!(
+
+    let result = sqlx::query!(
         r#"
             UPDATE items
             SET
-                nombre = COALESCE($1, nombre),
-                categoria_global = COALESCE($2, categoria_global),
-                atributos = COALESCE($3, atributos),
-                stock_minimo = COALESCE($4, stock_minimo),
+                name = COALESCE($1, name),
+                global_category = COALESCE($2, global_category),
+                attributes = COALESCE($3, attributes),
+                minimum_stock = COALESCE($4, minimum_stock),
                 updated_at = NOW()
             WHERE id = $5
         "#,
-        payload.nombre,
-        payload.categoria_global as Option<ItemCategoria>,
-        payload.atributos,
-        payload.stock_minimo,
+        payload.name,
+        payload.global_category as Option<ItemCategory>,
+        payload.attributes,
+        payload.minimum_stock,
         id
     )
     .execute(&pool)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Error al actualizar: {}", e)))?;
+
+    if result.rows_affected() == 0 {
+        return Err((StatusCode::NOT_FOUND, "El item no existe".to_string()));
+    }
 
     Ok(StatusCode::OK)
 }

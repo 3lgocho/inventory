@@ -9,6 +9,7 @@ pub async fn get_all_users(
     State(pool): State<PgPool>,
     Query(pag): Query<Pagination>,
 ) -> Result<Json<PagedResponse<UserResponse>>, (StatusCode, String)> {
+
     let per_page = pag.per_page.unwrap_or(10);
     let page = pag.page.unwrap_or(1);
     let offset = (page - 1) * per_page;
@@ -16,7 +17,7 @@ pub async fn get_all_users(
     let total_records = sqlx::query_scalar!("SELECT COUNT(*) FROM users")
         .fetch_one(&pool)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Error de conteo: {}", e)))?
         .unwrap_or(0);
 
     let users = sqlx::query_as!(
@@ -24,12 +25,13 @@ pub async fn get_all_users(
         r#"
             SELECT
                 id,
-                nombre,
+                name,
                 email,
-                rol as "rol: UserRole",
+                role as "role: UserRole",
                 created_at,
                 updated_at
             FROM users
+            ORDER BY created_at DESC
             LIMIT $1 OFFSET $2
         "#,
         per_page,

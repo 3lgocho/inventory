@@ -1,14 +1,15 @@
 use sqlx::PgPool;
 use axum::{extract::{State, Query}, Json, http::StatusCode};
 
-use crate::models::{Item, ItemCategoria, ItemUbicacion, Pagination, PagedResponse};
+use crate::models::{ItemCategory, Pagination, PagedResponse, ItemResponseDto};
 use crate::handlers::users::middleware::AuthUser;
 
 pub async fn get_all_items(
     _auth: AuthUser,
     State(pool): State<PgPool>,
     Query(pag): Query<Pagination>,
-) -> Result<Json<PagedResponse<Item>>, (StatusCode, String)> {
+) -> Result<Json<PagedResponse<ItemResponseDto>>, (StatusCode, String)> {
+
     let per_page = pag.per_page.unwrap_or(10);
     let page = pag.page.unwrap_or(1);
     let offset = (page - 1) * per_page;
@@ -20,19 +21,21 @@ pub async fn get_all_items(
         .unwrap_or(0);
 
     let items = sqlx::query_as!(
-        Item,
+        ItemResponseDto,
         r#"
             SELECT
-                id, 
-                nombre, 
-                categoria_global as "categoria_global: ItemCategoria", 
-                atributos, 
-                ubicacion as "ubicacion: ItemUbicacion", 
-                cantidad, 
-                stock_minimo, 
-                created_at, 
-                updated_at
-            FROM items
+                i.id, 
+                i.name, 
+                i.global_category as "global_category: ItemCategory", 
+                i.attributes, 
+                i.minimum_stock, 
+                COALESCE(SUM(s.amount), 0)::INTEGER as "total_amount!", 
+                i.created_at, 
+                i.updated_at
+            FROM items i
+            LEFT JOIN item_stock s ON i.id = s.item_id
+            GROUP BY i.id
+            ORDER BY i.name ASC
             LIMIT $1 OFFSET $2
         "#,
         per_page,

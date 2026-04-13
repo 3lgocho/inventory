@@ -1,35 +1,35 @@
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use sqlx::{FromRow, Type};
+use serde_json::Value;
 
 #[derive(Debug, Serialize, Deserialize, Type, Clone, Copy)]
-#[sqlx(type_name = "varchar")]
-pub enum ItemCategoria {
-    Red,
+#[sqlx(type_name = "item_category", rename_all = "snake_case")]
+pub enum ItemCategory {
+    Redes,
     Hardware,
     Complemento,
 }
 
 #[derive(Debug, Serialize, Deserialize, Type, Clone, Copy)]
-#[sqlx(type_name = "varchar")]
-pub enum ItemUbicacion {
+#[sqlx(type_name = "item_location", rename_all = "snake_case")]
+pub enum ItemLocation {
     IT,
+    CS,
+    LM,
+    Billing,
+    Clerks,
+    Arche,
     Deposito,
+    Ronny,
     #[serde(rename = "En uso")]
-    #[sqlx(rename = "En uso")]
     EnUso,
-    Ronny
+    Others,
+    Proveedor
 }
 
 #[derive(Debug, Serialize, Deserialize, Type, Clone, Copy)]
-#[sqlx(type_name = "varchar")]
-pub enum TipoMovimiento {
-    Entrada,
-    Salida,
-}
-
-#[derive(Debug, Serialize, Deserialize, Type, Clone, Copy)]
-#[sqlx(type_name = "varchar")]
+#[sqlx(type_name = "user_role", rename_all = "snake_case")]
 pub enum UserRole {
     Admin
 }
@@ -37,35 +37,67 @@ pub enum UserRole {
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Item {
     pub id: i32,
-    pub nombre: String,
-    pub categoria_global: ItemCategoria,
-    pub atributos: Option<serde_json::Value>,
-    pub ubicacion: ItemUbicacion, 
-    pub cantidad: i32,
-    pub stock_minimo: i32,
+    pub name: String,
+    pub global_category: ItemCategory,
+    pub attributes: Value,
+    pub minimum_stock: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ItemResponseDto {
+    pub id: i32,
+    pub name: String,
+    pub global_category: ItemCategory,
+    pub attributes: serde_json::Value,
+    pub minimum_stock: i32,
+    pub total_amount: i32, // Aquí sí vive el cálculo
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
-pub struct Movimiento {
+pub struct ItemStock {
+    pub id: i32,
+    pub item_id: i32,
+    pub location: ItemLocation,
+    pub amount: i32,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct Movement {
     pub id: i32,
     pub item_id: i32,
     pub user_id: i32,
-    pub cantidad: i32,
-    pub tipo: TipoMovimiento,
-    pub motivo: String,
+    pub amount: i32,
+    pub origin: ItemLocation,
+    pub destination: ItemLocation,
+    pub reason: String,
     pub created_at: DateTime<Utc>
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct MovementDetailed {
+    pub id: i32,
+    pub item_name: String,    // Viene del JOIN con items
+    pub user_name: String,    // Viene del JOIN con users
+    pub amount: i32,
+    pub origin: ItemLocation,
+    pub destination: ItemLocation,
+    pub reason: String,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct User {
     pub id: i32,
-    pub nombre: String,
+    pub name: String,
     pub email: String,
     #[serde(skip_serializing)]
     pub password: String,
-    pub rol: UserRole,
+    pub role: UserRole,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -74,8 +106,10 @@ pub struct User {
 pub struct Claims {
     pub sub: String,
     pub exp: usize,
+    pub role: UserRole,
 }
 
+/* 
 #[derive(Serialize)]
 pub struct MovimientoDetallado {
     pub id: i32,
@@ -86,6 +120,7 @@ pub struct MovimientoDetallado {
     pub motivo: String,
     pub created_at: DateTime<Utc>,
 }
+*/
 
 #[derive(Deserialize)]
 pub struct Pagination {
@@ -104,9 +139,9 @@ pub struct PagedResponse<T> {
 #[derive(serde::Serialize)]
 pub struct UserResponse {
     pub id: i32,
-    pub nombre: String,
+    pub name: String,
     pub email: String,
-    pub rol: UserRole,
+    pub role: UserRole,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

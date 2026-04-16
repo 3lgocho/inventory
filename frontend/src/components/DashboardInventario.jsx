@@ -17,11 +17,18 @@ export const DashboardInventario = () => {
     nombre: '', categoria_global: '', ubicacion: 'IT', cantidad: 1, stock_minimo: 1, atributos: {}
   });
 
+  const [attrKey, setAttrKey] = useState('');
+  const [attrVal, setAttrVal] = useState('');
+
+  // Para el Side Peek (Panel Lateral)
+  const [editandoAtributos, setEditandoAtributos] = useState(false);
+  const [atributosEditables, setAtributosEditables] = useState({});
+
   const cargarDatos = async () => {
     try {
       const datos = await obtenerInventario();
-      const itemsAplanados = Object.values(datos).flat();
-      setInventario(itemsAplanados);
+      // Apuntamos directo al arreglo "data". El "|| []" es un fallback de seguridad extra.
+      setInventario(datos.data || []);
     } catch (error) {
       console.error("Error cargando inventario:", error);
     } finally {
@@ -73,9 +80,13 @@ export const DashboardInventario = () => {
     }
   };
 
-  const inventarioFiltrado = inventario.filter(item =>
-    item.nombre.toLowerCase().includes(terminoBusqueda.toLowerCase())
-  );
+  const inventarioFiltrado = inventario.filter(item => {
+    // Blindamos las variables: si son null o undefined, usan un string vacío ""
+    const nombreItem = item.nombre || "";
+    const busqueda = terminoBusqueda || "";
+
+    return nombreItem.toLowerCase().includes(busqueda.toLowerCase());
+  });
 
   return (
     <div className="flex min-h-screen bg-white dark:bg-[#191919] text-zinc-900 dark:text-zinc-200 font-sans transition-colors duration-300">
@@ -193,7 +204,17 @@ export const DashboardInventario = () => {
               </div>
               <div>
                 <label className="block text-zinc-500 mb-1">Categoría</label>
-                <input required type="text" placeholder="Ej. Monitor HDMI" value={nuevoItem.categoria_global} onChange={e => setNuevoItem({ ...nuevoItem, categoria_global: e.target.value })} className="w-full px-3 py-2 bg-zinc-50 dark:bg-[#191919] border border-zinc-200 dark:border-[#2e2e2e] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                <select
+                  required
+                  value={nuevoItem.categoria_global}
+                  onChange={e => setNuevoItem({ ...nuevoItem, categoria_global: e.target.value })}
+                  className="w-full px-3 py-2 bg-zinc-50 dark:bg-[#191919] border border-zinc-200 dark:border-[#2e2e2e] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="" disabled>Selecciona una categoría...</option>
+                  <option value="Hardware">Hardware</option>
+                  <option value="Red">Red</option>
+                  <option value="Complemento">Complemento</option>
+                </select>
               </div>
               <div className="flex gap-4">
                 <div className="w-1/3">
@@ -270,19 +291,78 @@ export const DashboardInventario = () => {
                 </li>
               </ul>
 
-              <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-4">Atributos Técnicos</h3>
-              <div className="bg-zinc-50 dark:bg-[#242424] p-4 rounded-lg border border-zinc-100 dark:border-[#2e2e2e]">
-                {Object.keys(itemSeleccionado.atributos || {}).length > 0 ? (
-                  <ul className="space-y-2">
-                    {Object.entries(itemSeleccionado.atributos).map(([key, value]) => (
-                      <li key={key} className="text-sm flex justify-between">
-                        <span className="text-zinc-500 capitalize">{key}:</span>
-                        <span className="font-medium">{value}</span>
-                      </li>
-                    ))}
-                  </ul>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Atributos Técnicos</h3>
+                {!editandoAtributos ? (
+                  <button onClick={() => setEditandoAtributos(true)} className="text-xs text-blue-500 hover:text-blue-400">Editar</button>
                 ) : (
-                  <p className="text-sm text-zinc-500 italic">Sin atributos registrados.</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => { setEditandoAtributos(false); setAtributosEditables(itemSeleccionado.atributos || {}); }} className="text-xs text-zinc-500 hover:text-zinc-300">Cancelar</button>
+                    <button onClick={async () => {
+                      // STOP & CHECK: Aquí falta la conexión a la API
+                      console.log("Payload a enviar:", atributosEditables);
+                      alert("UI Listo. Esperando endpoint PUT/PATCH de Rust para guardar en BD.");
+                      setEditandoAtributos(false);
+                      setItemSeleccionado({ ...itemSeleccionado, atributos: atributosEditables });
+                    }} className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded">Guardar</button>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-[#242424] p-4 rounded-lg border border-[#2e2e2e]">
+                {!editandoAtributos ? (
+                  /* --- MODO LECTURA (Bulleted List) --- */
+                  Object.keys(itemSeleccionado.atributos || {}).length > 0 ? (
+                    <ul className="list-disc list-inside space-y-1 text-sm text-zinc-300 marker:text-zinc-500">
+                      {Object.entries(itemSeleccionado.atributos).map(([key, value]) => (
+                        <li key={key}>
+                          <span className="font-semibold text-zinc-400 capitalize">{key}:</span> {value}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-zinc-500 italic">Sin atributos registrados.</p>
+                  )
+                ) : (
+                  /* --- MODO EDICIÓN --- */
+                  <div className="space-y-3">
+                    {Object.entries(atributosEditables).map(([key, value]) => (
+                      <div key={key} className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={key}
+                          disabled
+                          className="w-1/3 px-2 py-1 text-sm bg-[#191919] border border-[#3e3e3e] rounded text-zinc-500 cursor-not-allowed"
+                        />
+                        <input
+                          type="text"
+                          value={value}
+                          onChange={(e) => setAtributosEditables({ ...atributosEditables, [key]: e.target.value })}
+                          className="flex-grow px-2 py-1 text-sm bg-[#191919] border border-[#2e2e2e] rounded focus:outline-none focus:border-blue-500"
+                        />
+                        <button onClick={() => {
+                          const nuevos = { ...atributosEditables };
+                          delete nuevos[key];
+                          setAtributosEditables(nuevos);
+                        }} className="text-red-500 hover:text-red-400 px-2">&times;</button>
+                      </div>
+                    ))}
+
+                    {/* Agregar nueva llave en modo edición */}
+                    <div className="flex gap-2 items-center pt-2 border-t border-[#333]">
+                      <input id="newEditKey" type="text" placeholder="Llave" className="w-1/3 px-2 py-1 text-sm bg-[#191919] border border-[#2e2e2e] rounded" />
+                      <input id="newEditVal" type="text" placeholder="Valor" className="flex-grow px-2 py-1 text-sm bg-[#191919] border border-[#2e2e2e] rounded" />
+                      <button onClick={() => {
+                        const k = document.getElementById('newEditKey').value.trim();
+                        const v = document.getElementById('newEditVal').value.trim();
+                        if (k && v) {
+                          setAtributosEditables({ ...atributosEditables, [k.toLowerCase()]: v });
+                          document.getElementById('newEditKey').value = '';
+                          document.getElementById('newEditVal').value = '';
+                        }
+                      }} className="bg-zinc-700 hover:bg-zinc-600 px-2 py-1 rounded text-sm text-white text-xl pb-2">+</button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

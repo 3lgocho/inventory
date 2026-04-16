@@ -68,10 +68,9 @@ export const registrarUsuario = async (nombre, email, password) => {
     return respuesta;
 };
 
-// Obtener la lista de todos los usuarios (Solo para admins)
 export const obtenerUsuarios = async () => {
     const token = localStorage.getItem('token');
-    const respuesta = await fetch('/api/auth/users', { // Ajustado a la ruta de Manu
+    const respuesta = await fetch('/api/auth/get-all', { // <-- Ajuste de ruta aquí
         headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

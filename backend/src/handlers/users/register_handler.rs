@@ -3,9 +3,11 @@ use axum::{ extract::State, Json, http::StatusCode };
 use sqlx::PgPool;
 use bcrypt::{ hash, DEFAULT_COST };
 
+use crate::models::UserRole;
+
 #[derive(Deserialize)]
 pub struct RegisterRequest {
-    pub nombre: String,
+    pub name: String,
     pub email: String,
     pub password: String,
 }
@@ -14,6 +16,7 @@ pub async fn register_user(
     State(pool): State<PgPool>,
     Json(payload): Json<RegisterRequest>,
 ) -> Result<StatusCode, (StatusCode, String)> {
+
     validate_password(&payload.password)
         .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
 
@@ -21,16 +24,19 @@ pub async fn register_user(
         .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Error al procesar contraseña".to_string()))?;
 
     sqlx::query!(
-        "INSERT INTO users (nombre, email, password, rol) VALUES ($1, $2, $3, $4)",
-        payload.nombre,
+        "INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)",
+        payload.name,
         payload.email,
         hashed_password,
-        "Admin"
+        UserRole::Admin as UserRole
     )
     .execute(&pool)
     .await
     .map_err(|e| {
-        (StatusCode::BAD_REQUEST, format!("No se pudo crear el usuario: {}", e))
+        if e.to_string().contains("unique_email") || e.to_string().contains("users_email_key") {
+            return (StatusCode::BAD_REQUEST, "Este correo ya está registrado".to_string());
+        }
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("Error en la base de datos: {}", e))
     })?;
 
     Ok(StatusCode::CREATED)

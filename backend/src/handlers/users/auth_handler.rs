@@ -6,7 +6,7 @@ use jsonwebtoken::{encode, Header, EncodingKey};
 use chrono::{Utc, Duration};
 use std::env;
 
-use crate::models::Claims;
+use crate::models::{Claims, UserRole};
 
 #[derive(Deserialize)]
 pub struct LoginRequest {
@@ -23,8 +23,9 @@ pub async fn login_user(
     State(pool): State<PgPool>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<Json<LoginResponse>, (StatusCode, String)> {
+
     let user_record = sqlx::query!(
-        "SELECT password FROM users WHERE email = $1",
+        r#"SELECT id as "id!", password, role as "role!: UserRole" FROM users WHERE email = $1"#,
         payload.email
     )
     .fetch_one(&pool)
@@ -44,12 +45,14 @@ pub async fn login_user(
         .timestamp() as usize;
 
     let my_claims = Claims {
-        sub: payload.email,
+        sub: user_record.id.to_string(),
         exp: expiration,
+        role: user_record.role,
     };
 
-    let secret = env::var("JWT_SECRET_KEY").unwrap_or_else(|_| 
-        "MTI0OGVjYzc1ZjZlNGY4MzljYmY5ZmRjMzY2NDVkNjFlZDU3YTMwYmU0MGYzYWE2Cg==".to_string());
+    let secret = env::var("JWT_SECRET_KEY").map_err(|_| {
+        (StatusCode::INTERNAL_SERVER_ERROR, "Variable de entorno no configurada".to_string())
+    })?;
 
     // 5. Codificar el token
     let token = encode(
@@ -57,10 +60,7 @@ pub async fn login_user(
         &my_claims,
         &EncodingKey::from_secret(secret.as_ref()),
     )
-    .map_err(|e| {
-        eprintln!("Error al crear JWT: {}", e);
-        (StatusCode::INTERNAL_SERVER_ERROR, "No se pudo crear el token".to_string())
-    })?;
+    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Error al generar token".to_string()))?;
 
-    Ok(Json(LoginResponse {token}))
+    Ok(Json(LoginResponse{token}))
 }

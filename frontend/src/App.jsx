@@ -23,7 +23,7 @@ function App() {
       <Sidebar seccionActual={seccionActual} setSeccionActual={setSeccionActual} />
 
       {/* El contenido cambia según el botón que presiones en el Sidebar */}
-      <main className="flex-1" min-w-0 overflow-y-auto>
+      <main className="flex-1 min-w-0 overflow-y-auto">
         {seccionActual === 'inventario' && <DashboardInventario />}
         {seccionActual === 'usuarios' && <AdminUsuarios />}
 

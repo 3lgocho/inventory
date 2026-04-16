@@ -2,68 +2,81 @@ use serde::Deserialize;
 use sqlx::PgPool;
 use axum::{extract::State, Json, http::StatusCode};
 
-use crate::models::TipoMovimiento;
-use crate::handlers::users::middleware::AuthUser;
+use crate::{handlers::users::middleware::AuthUser, models::ItemLocation};
 
 #[derive(Deserialize)]
-pub struct RegisterMovementRequest {
+pub struct MoveStockRequest {
     pub item_id: i32,
-    pub cantidad: i32,
-    pub tipo: TipoMovimiento,
-    pub motivo: String,
+    pub from_location: ItemLocation,
+    pub to_location: ItemLocation,
+    pub amount: i32,
+    pub reason: String,
 }
 
-pub async fn register_movement(
+pub async fn move_stock(
     auth: AuthUser,
     State(pool): State<PgPool>,
-    Json(payload): Json<RegisterMovementRequest>
+    Json(payload): Json<MoveStockRequest>,
 ) -> Result<StatusCode, (StatusCode, String)> {
+
     let mut tx = pool.begin().await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let user = sqlx::query!("SELECT id FROM users WHERE email = $1", auth.0.sub)
-        .fetch_one(&pool)
-        .await
-        .map_err(|e| (StatusCode::UNAUTHORIZED, "Usuario no encontrado".to_string()))?;
+    let res_origin = sqlx::query!(
+        r#"
+            UPDATE item_stock
+            SET amount = amount - $1
+            WHERE item_id = $2 AND location = $3 AND amount >=$1
+        "#,
+        payload.amount,
+        payload.item_id,
+        payload.from_location as ItemLocation
+    )
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Error en origen: {}", e)))?;
+
+    if res_origin.rows_affected() == 0 {
+        return Err((StatusCode::BAD_REQUEST, "Stock insuficiente en la ubicación de origen".into()));
+    }
 
     sqlx::query!(
         r#"
-            INSERT INTO movimientos (item_id, user_id, cantidad, tipo, motivo) VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO item_stock (item_id, location, amount)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (item_id, location)
+            DO UPDATE SET 
+                amount = item_stock.amount + EXCLUDED.amount,
+                updated_at = NOW()
         "#,
         payload.item_id,
-        user.id,
-        payload.cantidad,
-        payload.tipo as TipoMovimiento,
-        payload.motivo
+        payload.to_location as ItemLocation,
+        payload.amount
     )
     .execute(&mut *tx)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Error al registrar movimiento: {}", e)))?;
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Error en destino: {}", e)))?;
 
-    let operador = match payload.tipo {
-        TipoMovimiento::Entrada => 1,
-        TipoMovimiento::Salida => -1,
-    };
-
-    let cantidad_final = payload.cantidad * operador;
-
-    let res = sqlx::query!(
+    let user_id = auth.0.sub.parse::<i32>().unwrap_or(0);
+    
+    sqlx::query!(
         r#"
-            UPDATE items SET cantidad = cantidad + $1 WHERE id = $2 AND (cantidad + $1) >= 0
+            INSERT INTO movements (item_id, user_id, amount, origin, destination, reason)
+            VALUES ($1, $2, $3, $4, $5, $6)
         "#,
-        cantidad_final,
-        payload.item_id
+        payload.item_id,
+        user_id,
+        payload.amount,
+        payload.from_location as ItemLocation,
+        payload.to_location as ItemLocation,
+        payload.reason
     )
     .execute(&mut *tx)
     .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Error al actualizar stock: {}", e)))?;
-
-    if res.rows_affected() == 0 {
-        return Err((StatusCode::BAD_REQUEST, "Stock insuficiente o item no encontrado".to_string()));
-    }
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Error al crear log: {}", e)))?;
 
     tx.commit().await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    Ok(StatusCode::CREATED)
+    Ok(StatusCode::OK)
 }

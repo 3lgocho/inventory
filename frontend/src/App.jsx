@@ -1,7 +1,4 @@
-// frontend/src/App.jsx
 import { useState, useEffect } from 'react';
-
-// Fíjate cómo ahora apuntamos a las nuevas subcarpetas
 import { Login } from './components/auth/Login';
 import { AdminUsuarios } from './components/auth/AdminUsuarios';
 import { DashboardInventario } from './components/inventory/DashboardInventario';
@@ -26,7 +23,6 @@ function App() {
       <Sidebar seccionActual={seccionActual} setSeccionActual={setSeccionActual} />
 
       <main className="flex-1 min-w-0 overflow-y-auto">
-        {/* App.jsx solo llama al Padre. El Padre ya tiene adentro la tabla y el modal */}
         {seccionActual === 'inventario' && <DashboardInventario />}
 
         {seccionActual === 'usuarios' && <AdminUsuarios />}

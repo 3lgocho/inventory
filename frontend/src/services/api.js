@@ -74,16 +74,35 @@ export const crearEquipo = async (nuevoItem) => {
 };
 
 export const registrarUsuario = async (nombre, email, password) => {
+    const token = localStorage.getItem('token');
+
+    const payload = {
+        name: nombre,
+        email: email,
+        password: password
+        // (Sin el rol, tal como lo quitaste)
+    };
+
     const respuesta = await fetch('/api/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, email, password })
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
     });
+
+    verificarTokenExpirado(respuesta);
+
     if (!respuesta.ok) {
-        const mensajeError = await respuesta.text();
-        throw new Error(mensajeError || 'Error al registrar usuario');
+        const errorData = await respuesta.text();
+        throw new Error(`Error al registrar usuario: ${errorData}`);
     }
-    return respuesta;
+
+    // SOLUCIÓN AQUÍ: Leemos como texto primero. 
+    // Si Rust envió algo, lo convertimos a JSON. Si envió vacío, devolvemos un objeto de éxito.
+    const text = await respuesta.text();
+    return text ? JSON.parse(text) : { success: true };
 };
 
 export const obtenerUsuarios = async () => {

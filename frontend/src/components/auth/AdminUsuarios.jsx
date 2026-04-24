@@ -1,11 +1,29 @@
 import { useState, useEffect } from 'react';
+import { Eye, EyeOff } from 'lucide-react'; // <-- Importamos los iconos
 import { obtenerUsuarios, registrarUsuario } from "../../services/api";
 
-export const AdminUsuarios = () => {
+// Añadimos 'rolActual' como prop. Lo ideal es que se lo pases desde tu App/Context 
+// leyendo el token guardado en localStorage.
+export const AdminUsuarios = ({ rolActual = 'Admin' }) => {
     const [usuarios, setUsuarios] = useState([]);
     const [mostrarModal, setMostrarModal] = useState(false);
-    const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', password: '' });
+
+    // Añadimos el estado 'role' y lo inicializamos por defecto en 'Admin'
+    const [nuevoUsuario, setNuevoUsuario] = useState({
+        nombre: '',
+        email: '',
+        password: '',
+        password_confirm: '',
+        role: 'Admin'
+    });
+
     const [error, setError] = useState('');
+
+    // Estados para los ojitos de las contraseñas
+    const [mostrarPassword, setMostrarPassword] = useState(false);
+    const [mostrarPasswordConfirm, setMostrarPasswordConfirm] = useState(false);
+
+    const isSuperAdmin = rolActual === 'SuperAdmin';
 
     const cargarUsuarios = async () => {
         try {
@@ -22,13 +40,27 @@ export const AdminUsuarios = () => {
         e.preventDefault();
         setError('');
 
+        // 1. VALIDACIÓN: Las contraseñas deben coincidir
+        if (nuevoUsuario.password !== nuevoUsuario.password_confirm) {
+            setError('Las contraseñas no coinciden. Por favor, verifícalas.');
+            return;
+        }
+
         try {
-            await registrarUsuario(nuevoUsuario.nombre, nuevoUsuario.email, nuevoUsuario.password);
+            // Nota: Asegúrate de que registrarUsuario en tu api.js reciba el parámetro 'role'
+            // si planeas guardarlo en la base de datos.
+            await registrarUsuario(nuevoUsuario.nombre, nuevoUsuario.email, nuevoUsuario.password, nuevoUsuario.role);
+
             setMostrarModal(false);
-            setNuevoUsuario({ nombre: '', email: '', password: '' });
+            // Reseteamos el formulario
+            setNuevoUsuario({ nombre: '', email: '', password: '', password_confirm: '', role: 'Admin' });
+            setMostrarPassword(false);
+            setMostrarPasswordConfirm(false);
+
             cargarUsuarios();
         } catch (err) {
-            setError(err.message);
+            // Atrapamos el error del backend
+            setError(err.message || 'Error al intentar crear el usuario.');
         }
     };
 
@@ -53,7 +85,6 @@ export const AdminUsuarios = () => {
                         <tr className="border-b border-[#2e2e2e] bg-[#252525]">
                             <th className="p-4 text-xs font-semibold text-zinc-500 uppercase">Nombre</th>
                             <th className="p-4 text-xs font-semibold text-zinc-500 uppercase">Email</th>
-                            {/* NUEVA COLUMNA: Rol */}
                             <th className="p-4 text-xs font-semibold text-zinc-500 uppercase">Rol</th>
                             <th className="p-4 text-xs font-semibold text-zinc-500 uppercase">Acciones</th>
                         </tr>
@@ -63,14 +94,12 @@ export const AdminUsuarios = () => {
                             <tr key={user.id} className="hover:bg-[#252525] transition-colors">
                                 <td className="p-4 text-zinc-200 text-sm">{user.name}</td>
                                 <td className="p-4 text-zinc-400 text-sm font-mono">{user.email}</td>
-                                {/* MOSTRAR ROL: Usamos una clase para darle estilo de "etiqueta" */}
                                 <td className="py-2.5 px-4 text-zinc-600 dark:text-zinc-400">
-                                    <span className="bg-zinc-100 dark:bg-[#2c2c2c] px-2 py-1 rounded-md text-xs border border-transparent dark:border-[#3a3a3a]">
+                                    <span className={`px-2 py-1 rounded-md text-xs border border-transparent ${user.role === 'SuperAdmin' ? 'bg-purple-900/30 text-purple-400 border-purple-800/50' : 'bg-zinc-100 dark:bg-[#2c2c2c] dark:border-[#3a3a3a]'}`}>
                                         {user.role || 'Admin'}
                                     </span>
                                 </td>
                                 <td className="p-4 flex gap-3">
-                                    {/* NUEVO BOTÓN: Editar */}
                                     <button
                                         className="text-blue-500 hover:text-blue-400 text-sm cursor-not-allowed opacity-50"
                                         title="Ruta backend pendiente (Falta PATCH /api/auth/update)"
@@ -101,7 +130,7 @@ export const AdminUsuarios = () => {
                         </div>
 
                         {error && (
-                            <div className="mb-4 p-3 rounded-md bg-red-900/20 text-red-400 text-sm border border-red-900/50">
+                            <div className="mb-4 p-3 rounded-md bg-red-900/20 text-red-400 text-sm border border-red-900/50 text-center">
                                 {error}
                             </div>
                         )}
@@ -114,28 +143,77 @@ export const AdminUsuarios = () => {
                                     type="text"
                                     value={nuevoUsuario.nombre}
                                     onChange={e => setNuevoUsuario({ ...nuevoUsuario, nombre: e.target.value })}
-                                    className="w-full px-3 py-2 bg-[#191919] border border-[#2e2e2e] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-zinc-200"
+                                    className="w-full px-3 py-2 bg-[#191919] border border-[#2e2e2e] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-zinc-200 transition-colors"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-zinc-500 mb-1">Correo Electrónico</label>
-                                <input
-                                    required
-                                    type="email"
-                                    value={nuevoUsuario.email}
-                                    onChange={e => setNuevoUsuario({ ...nuevoUsuario, email: e.target.value })}
-                                    className="w-full px-3 py-2 bg-[#191919] border border-[#2e2e2e] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-zinc-200"
-                                />
+
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="block text-zinc-500 mb-1">Correo Electrónico</label>
+                                    <input
+                                        required
+                                        type="email"
+                                        placeholder="admin@it.com"
+                                        value={nuevoUsuario.email}
+                                        onChange={e => setNuevoUsuario({ ...nuevoUsuario, email: e.target.value })}
+                                        className="w-full px-3 py-2 bg-[#191919] border border-[#2e2e2e] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-zinc-200 transition-colors"
+                                    />
+                                </div>
+                                {/* --- SELECT CONDICIONAL DE ROL --- */}
+                                <div className="w-1/3">
+                                    <label className="block text-zinc-500 mb-1">Rol</label>
+                                    <select
+                                        value={nuevoUsuario.role}
+                                        onChange={e => setNuevoUsuario({ ...nuevoUsuario, role: e.target.value })}
+                                        disabled={!isSuperAdmin} // Bloqueado si no es SuperAdmin
+                                        className={`w-full px-3 py-2 bg-[#191919] border border-[#2e2e2e] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-zinc-200 transition-colors ${!isSuperAdmin ? 'opacity-50 cursor-not-allowed text-zinc-500' : ''}`}
+                                    >
+                                        <option value="Admin">Admin</option>
+                                        <option value="SuperAdmin">SuperAdmin</option>
+                                    </select>
+                                </div>
                             </div>
+
+                            {/* --- INPUT CONTRASEÑA --- */}
                             <div>
-                                <label className="block text-zinc-500 mb-1">Contraseña Temporal</label>
-                                <input
-                                    required
-                                    type="password"
-                                    value={nuevoUsuario.password}
-                                    onChange={e => setNuevoUsuario({ ...nuevoUsuario, password: e.target.value })}
-                                    className="w-full px-3 py-2 bg-[#191919] border border-[#2e2e2e] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-zinc-200"
-                                />
+                                <label className="block text-zinc-500 mb-1">Contraseña</label>
+                                <div className="relative">
+                                    <input
+                                        required
+                                        type={mostrarPassword ? "text" : "password"}
+                                        value={nuevoUsuario.password}
+                                        onChange={e => setNuevoUsuario({ ...nuevoUsuario, password: e.target.value })}
+                                        className="w-full pl-3 pr-10 py-2 bg-[#191919] border border-[#2e2e2e] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-zinc-200 transition-colors"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setMostrarPassword(!mostrarPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors focus:outline-none"
+                                    >
+                                        {mostrarPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* --- INPUT CONFIRMAR CONTRASEÑA --- */}
+                            <div>
+                                <label className="block text-zinc-500 mb-1">Confirmar Contraseña</label>
+                                <div className="relative">
+                                    <input
+                                        required
+                                        type={mostrarPasswordConfirm ? "text" : "password"}
+                                        value={nuevoUsuario.password_confirm}
+                                        onChange={e => setNuevoUsuario({ ...nuevoUsuario, password_confirm: e.target.value })}
+                                        className="w-full pl-3 pr-10 py-2 bg-[#191919] border border-[#2e2e2e] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-zinc-200 transition-colors"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setMostrarPasswordConfirm(!mostrarPasswordConfirm)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors focus:outline-none"
+                                    >
+                                        {mostrarPasswordConfirm ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="pt-4 flex justify-end gap-3">

@@ -1,17 +1,15 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* FORZAR MODO OSCURO NATIVO */
 :root {
-    cursor: default;
-    user-select: none;
+    color-scheme: dark;
 }
 
-/* Permitir selección solo en inputs y áreas de texto */
-input,
-textarea,
-[contenteditable="true"] {
-    cursor: text;
-    user-select: text;
+body {
+    background-color: #1a1a1a;
+    /* Un color de fondo base oscuro por si algo falla */
+    color: #e5e5e5;
 }
 
 /* Asegurar que los botones y enlaces siempre muestren la mano */

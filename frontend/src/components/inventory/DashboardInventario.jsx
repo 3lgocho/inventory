@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Sun, Moon, Plus } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import { obtenerInventario, moverEquipo, crearEquipo } from '../../services/api';
 import { InventoryTable } from './InventoryTable';
 import { CreateItemModal } from './CreateItemModal';
@@ -9,7 +9,6 @@ export const DashboardInventario = () => {
   const [inventario, setInventario] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
-  const [darkMode, setDarkMode] = useState(true);
   const [itemSeleccionado, setItemSeleccionado] = useState(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,9 +28,6 @@ export const DashboardInventario = () => {
   };
 
   useEffect(() => { cargarDatos(); }, []);
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', darkMode);
-  }, [darkMode]);
 
   const handleMoverInline = async (item, nuevaUbicacion) => {
     if (!nuevaUbicacion || nuevaUbicacion === item.ubicacion) return;
@@ -88,9 +84,6 @@ export const DashboardInventario = () => {
             </div>
             <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium">
               <Plus className="w-4 h-4" /> Nuevo
-            </button>
-            <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-md border border-zinc-200 dark:border-[#2e2e2e] hover:bg-zinc-100 dark:hover:bg-[#2c2c2c] text-zinc-500">
-              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
           </div>
         </div>

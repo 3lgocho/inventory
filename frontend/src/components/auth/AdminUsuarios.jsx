@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { obtenerUsuarios, registrarUsuario } from '../services/api';
+import { obtenerUsuarios, registrarUsuario } from "../../services/api";
 
 export const AdminUsuarios = () => {
     const [usuarios, setUsuarios] = useState([]);
     const [mostrarModal, setMostrarModal] = useState(false);
     const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', password: '' });
+    const [error, setError] = useState('');
 
     const cargarUsuarios = async () => {
         try {
             const respuesta = await obtenerUsuarios();
-            // EL FIX ESTÁ AQUÍ: Apunta directo a respuesta.data
             setUsuarios(respuesta.data || []);
         } catch (error) {
             console.error(error);
@@ -20,10 +20,16 @@ export const AdminUsuarios = () => {
 
     const handleCrear = async (e) => {
         e.preventDefault();
-        await registrarUsuario(nuevoUsuario.nombre, nuevoUsuario.email, nuevoUsuario.password);
-        setMostrarModal(false);
-        setNuevoUsuario({ nombre: '', email: '', password: '' });
-        cargarUsuarios();
+        setError('');
+
+        try {
+            await registrarUsuario(nuevoUsuario.nombre, nuevoUsuario.email, nuevoUsuario.password);
+            setMostrarModal(false);
+            setNuevoUsuario({ nombre: '', email: '', password: '' });
+            cargarUsuarios();
+        } catch (err) {
+            setError(err.message);
+        }
     };
 
     return (
@@ -31,7 +37,10 @@ export const AdminUsuarios = () => {
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-zinc-100">Gestión de Usuarios</h2>
                 <button
-                    onClick={() => setMostrarModal(true)}
+                    onClick={() => {
+                        setMostrarModal(true);
+                        setError('');
+                    }}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
                 >
                     + Nuevo Usuario
@@ -44,16 +53,37 @@ export const AdminUsuarios = () => {
                         <tr className="border-b border-[#2e2e2e] bg-[#252525]">
                             <th className="p-4 text-xs font-semibold text-zinc-500 uppercase">Nombre</th>
                             <th className="p-4 text-xs font-semibold text-zinc-500 uppercase">Email</th>
+                            {/* NUEVA COLUMNA: Rol */}
+                            <th className="p-4 text-xs font-semibold text-zinc-500 uppercase">Rol</th>
                             <th className="p-4 text-xs font-semibold text-zinc-500 uppercase">Acciones</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-[#2e2e2e]">
                         {usuarios.map(user => (
                             <tr key={user.id} className="hover:bg-[#252525] transition-colors">
-                                <td className="p-4 text-zinc-200 text-sm">{user.nombre}</td>
+                                <td className="p-4 text-zinc-200 text-sm">{user.name}</td>
                                 <td className="p-4 text-zinc-400 text-sm font-mono">{user.email}</td>
-                                <td className="p-4">
-                                    <button className="text-red-500 hover:text-red-400 text-sm">Eliminar</button>
+                                {/* MOSTRAR ROL: Usamos una clase para darle estilo de "etiqueta" */}
+                                <td className="py-2.5 px-4 text-zinc-600 dark:text-zinc-400">
+                                    <span className="bg-zinc-100 dark:bg-[#2c2c2c] px-2 py-1 rounded-md text-xs border border-transparent dark:border-[#3a3a3a]">
+                                        {user.role || 'Admin'}
+                                    </span>
+                                </td>
+                                <td className="p-4 flex gap-3">
+                                    {/* NUEVO BOTÓN: Editar */}
+                                    <button
+                                        className="text-blue-500 hover:text-blue-400 text-sm cursor-not-allowed opacity-50"
+                                        title="Ruta backend pendiente (Falta PATCH /api/auth/update)"
+                                    >
+                                        Editar
+                                    </button>
+
+                                    <button
+                                        className="text-red-500 hover:text-red-400 text-sm cursor-not-allowed opacity-50"
+                                        title="Ruta backend pendiente (Falta DELETE /api/auth/users/:id)"
+                                    >
+                                        Eliminar
+                                    </button>
                                 </td>
                             </tr>
                         ))}
@@ -69,6 +99,12 @@ export const AdminUsuarios = () => {
                             <h2 className="text-lg font-bold text-zinc-100">Registrar Usuario</h2>
                             <button onClick={() => setMostrarModal(false)} className="text-zinc-400 hover:text-zinc-200 text-xl">&times;</button>
                         </div>
+
+                        {error && (
+                            <div className="mb-4 p-3 rounded-md bg-red-900/20 text-red-400 text-sm border border-red-900/50">
+                                {error}
+                            </div>
+                        )}
 
                         <form onSubmit={handleCrear} className="space-y-4 text-sm">
                             <div>

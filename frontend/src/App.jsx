@@ -1,8 +1,11 @@
+// frontend/src/App.jsx
 import { useState, useEffect } from 'react';
-import { Login } from './components/Login';
-import { Sidebar } from './components/Sidebar';
-import { DashboardInventario } from './components/DashboardInventario';
-import { AdminUsuarios } from './components/AdminUsuarios';
+
+// Fíjate cómo ahora apuntamos a las nuevas subcarpetas
+import { Login } from './components/auth/Login';
+import { AdminUsuarios } from './components/auth/AdminUsuarios';
+import { DashboardInventario } from './components/inventory/DashboardInventario';
+import { Sidebar } from './components/shared/Sidebar';
 
 function App() {
   const [estaAutenticado, setEstaAutenticado] = useState(false);
@@ -22,9 +25,10 @@ function App() {
     <div className="flex min-h-screen bg-white dark:bg-[#191919]">
       <Sidebar seccionActual={seccionActual} setSeccionActual={setSeccionActual} />
 
-      {/* El contenido cambia según el botón que presiones en el Sidebar */}
       <main className="flex-1 min-w-0 overflow-y-auto">
+        {/* App.jsx solo llama al Padre. El Padre ya tiene adentro la tabla y el modal */}
         {seccionActual === 'inventario' && <DashboardInventario />}
+
         {seccionActual === 'usuarios' && <AdminUsuarios />}
 
         {seccionActual === 'movimientos' && (

@@ -1,29 +1,35 @@
-// 1. EL LOGIN (NUEVO)
+const verificarTokenExpirado = (respuesta) => {
+    if (respuesta.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/';
+    }
+    return respuesta;
+};
+
 export const loginUsuario = async (email, password) => {
-    // Ajusta la ruta a '/auth/login' si no estás usando el proxy de Vite con '/api'
     const respuesta = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
     });
+    // Aquí NO usamos el interceptor porque un 401 aquí significa "mala contraseña"
     if (!respuesta.ok) throw new Error('Credenciales incorrectas');
     return await respuesta.json();
 };
 
-// 2. TU GET (INTACTO)
 export const obtenerInventario = async () => {
-    const token = localStorage.getItem('token'); // ¡Asegúrate de enviar el token!
+    const token = localStorage.getItem('token');
     const respuesta = await fetch('/api/items/get-all', {
         headers: { 'Authorization': `Bearer ${token}` }
     });
+    verificarTokenExpirado(respuesta); // Interceptamos
     if (!respuesta.ok) throw new Error('Error al conectar con el servidor Rust');
     return await respuesta.json();
 };
 
-// 3. TU MOVE (INTACTO)
 export const moverEquipo = async (id, nueva_ubicacion) => {
     const token = localStorage.getItem('token');
-    const respuesta = await fetch('/api/movement/register', { // Ruta correcta de Manu
+    const respuesta = await fetch('/api/movement/register', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -31,24 +37,40 @@ export const moverEquipo = async (id, nueva_ubicacion) => {
         },
         body: JSON.stringify({ item_id: id, tipo: 'SALIDA', cantidad: 1, observacion: `Movido a ${nueva_ubicacion}` }),
     });
+    verificarTokenExpirado(respuesta); // Interceptamos
     if (!respuesta.ok) throw new Error('Error al actualizar la ubicación');
     return await respuesta.json();
 };
 
-// 4. TU CREATE (CON EL TOKEN INYECTADO)
 export const crearEquipo = async (nuevoItem) => {
-    const token = localStorage.getItem('token'); // Buscamos la llave en la bóveda
+    const token = localStorage.getItem('token');
 
-    const response = await fetch('/api/items/register', {
+    const payload = {
+        ...nuevoItem,
+        atributos: nuevoItem.atributos || {}
+    };
+
+    const respuesta = await fetch('/api/items/register', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // Inyectamos el Token para pasar el AuthUser
+            'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(nuevoItem)
+        body: JSON.stringify(payload)
     });
-    if (!response.ok) throw new Error('Error al crear el equipo');
-    return response.json();
+
+    verificarTokenExpirado(respuesta);
+
+    if (!respuesta.ok) {
+        // En lugar de explotar con .json(), leemos el texto del error
+        const errorTexto = await respuesta.text();
+        console.error("Error detallado del backend:", errorTexto);
+        throw new Error(errorTexto || 'Error al crear el equipo');
+    }
+
+    // Leemos la respuesta con seguridad
+    const cuerpo = await respuesta.text();
+    return cuerpo ? JSON.parse(cuerpo) : {};
 };
 
 export const registrarUsuario = async (nombre, email, password) => {
@@ -57,36 +79,55 @@ export const registrarUsuario = async (nombre, email, password) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre, email, password })
     });
-
     if (!respuesta.ok) {
-        // En lugar de .json(), usamos .text() porque el backend envía texto plano en los errores
         const mensajeError = await respuesta.text();
         throw new Error(mensajeError || 'Error al registrar usuario');
     }
-
-    // Si el status es 201 (Created), no intentamos parsear JSON porque el body está vacío
     return respuesta;
 };
 
 export const obtenerUsuarios = async () => {
     const token = localStorage.getItem('token');
-    const respuesta = await fetch('/api/auth/get-all', { // <-- Ajuste de ruta aquí
+    const respuesta = await fetch('/api/auth/get-all', {
         headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
         }
     });
+    verificarTokenExpirado(respuesta); // Interceptamos
     if (!respuesta.ok) throw new Error('No se pudieron cargar los usuarios');
     return await respuesta.json();
 };
 
-// Eliminar un usuario por ID
 export const eliminarUsuario = async (id) => {
     const token = localStorage.getItem('token');
     const respuesta = await fetch(`/api/auth/users/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
     });
+    verificarTokenExpirado(respuesta); // Interceptamos
     if (!respuesta.ok) throw new Error('Error al eliminar usuario');
     return true;
+};
+
+// 5. ACTUALIZAR EQUIPO (Para editar atributos)
+export const actualizarEquipo = async (id, datosActualizados) => {
+    const token = localStorage.getItem('token');
+
+    // Mapeo: Si el componente envía "atributos", se cambia a "attributes"
+    const payload = datosActualizados.atributos
+        ? { attributes: datosActualizados.atributos }
+        : datosActualizados;
+
+    const respuesta = await fetch(`/api/items/update/${id}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!respuesta.ok) throw new Error('Error al actualizar el equipo');
+    return await respuesta.json();
 };

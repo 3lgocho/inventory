@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { moverEquipo } from '../services/api';
+import { moverEquipo } from '../../services/api';
 
 export const ItemCard = ({ item, recargarInventario }) => {
   const [nuevaUbicacion, setNuevaUbicacion] = useState('');
@@ -7,7 +7,7 @@ export const ItemCard = ({ item, recargarInventario }) => {
 
   const handleMover = async () => {
     if (!nuevaUbicacion || nuevaUbicacion === item.ubicacion) return;
-    
+
     setCargando(true);
     try {
       await moverEquipo(item.id, nuevaUbicacion);
@@ -47,7 +47,7 @@ export const ItemCard = ({ item, recargarInventario }) => {
 
       {/* Acciones: Select + Botón */}
       <div className="flex gap-2">
-        <select 
+        <select
           className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2"
           value={nuevaUbicacion}
           onChange={(e) => setNuevaUbicacion(e.target.value)}
@@ -61,15 +61,14 @@ export const ItemCard = ({ item, recargarInventario }) => {
             )
           ))}
         </select>
-        
-        <button 
+
+        <button
           onClick={handleMover}
           disabled={!nuevaUbicacion || cargando}
-          className={`font-medium rounded-md text-sm px-4 py-2 transition-colors ${
-            !nuevaUbicacion || cargando 
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-              : 'bg-blue-600 hover:bg-blue-700 text-white'
-          }`}
+          className={`font-medium rounded-md text-sm px-4 py-2 transition-colors ${!nuevaUbicacion || cargando
+            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
         >
           {cargando ? '...' : 'Mover'}
         </button>

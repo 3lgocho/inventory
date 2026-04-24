@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { loginUsuario } from '../services/api';
+import { Eye, EyeOff } from 'lucide-react'; // <-- Importamos los iconos
+import { loginUsuario } from "../../services/api";
 
 export const Login = ({ onLoginSuccess }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [mostrarPassword, setMostrarPassword] = useState(false); // <-- Estado para el ojito
     const [error, setError] = useState('');
     const [cargando, setCargando] = useState(false);
 
@@ -13,13 +15,8 @@ export const Login = ({ onLoginSuccess }) => {
         setCargando(true);
 
         try {
-            // 1. Enviamos credenciales al backend en Rust
             const data = await loginUsuario(email, password);
-
-            // 2. Si es exitoso, Rust nos devuelve un JWT. Lo guardamos en la bóveda de seguridad del navegador.
             localStorage.setItem('token', data.token);
-
-            // 3. Le avisamos a App.jsx que cambie el estado y quite la "puerta" de seguridad.
             onLoginSuccess();
         } catch (err) {
             setError('Credenciales incorrectas o servidor inaccesible.');
@@ -58,14 +55,24 @@ export const Login = ({ onLoginSuccess }) => {
 
                     <div>
                         <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">Contraseña</label>
-                        <input
-                            type="password"
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-3 py-2 bg-zinc-50 dark:bg-[#191919] border border-zinc-200 dark:border-[#2e2e2e] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100 transition-colors"
-                            placeholder="••••••••"
-                        />
+                        <div className="relative">
+                            <input
+                                type={mostrarPassword ? "text" : "password"} // <-- Alterna el tipo de input
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full pl-3 pr-10 py-2 bg-zinc-50 dark:bg-[#191919] border border-zinc-200 dark:border-[#2e2e2e] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100 transition-colors"
+                                placeholder="••••••••"
+                            />
+                            {/* --- BOTÓN DEL OJITO --- */}
+                            <button
+                                type="button"
+                                onClick={() => setMostrarPassword(!mostrarPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors focus:outline-none"
+                            >
+                                {mostrarPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                            </button>
+                        </div>
                     </div>
 
                     <button

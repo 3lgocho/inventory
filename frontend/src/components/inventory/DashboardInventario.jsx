@@ -68,9 +68,9 @@ export const DashboardInventario = () => {
 
   return (
     <div className="flex min-h-screen bg-white dark:bg-[#191919] text-zinc-900 dark:text-zinc-200 font-sans transition-colors duration-300">
-      <main className="flex-1 p-10 relative">
+      <main className="flex-1 p-6 relative">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold">Panel Central</h2>
+          <h2 className="text-2xl font-bold text-zinc-100">Panel Central</h2>
           <div className="flex items-center gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />

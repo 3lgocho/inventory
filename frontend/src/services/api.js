@@ -150,3 +150,31 @@ export const actualizarEquipo = async (id, datosActualizados) => {
     if (!respuesta.ok) throw new Error('Error al actualizar el equipo');
     return await respuesta.json();
 };
+
+export const actualizarUsuario = async (id, data) => {
+    const token = localStorage.getItem('token');
+
+    const payload = {
+        name: data.name,
+        email: data.email,
+        ...(data.password && data.password.length > 0 && { password: data.password })
+    };
+
+    const respuesta = await fetch(`/api/auth/users/${id}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+    });
+
+    verificarTokenExpirado(respuesta); // Interceptamos 401
+
+    if (!respuesta.ok) {
+        const errorTexto = await respuesta.text();
+        throw new Error(errorTexto || "Error al actualizar usuario");
+    }
+
+    return await respuesta.json();
+};

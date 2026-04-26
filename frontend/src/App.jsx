@@ -7,20 +7,44 @@ import { Sidebar } from './components/shared/Sidebar';
 function App() {
   const [estaAutenticado, setEstaAutenticado] = useState(false);
   const [seccionActual, setSeccionActual] = useState('inventario');
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     document.documentElement.classList.add('dark');
     const token = localStorage.getItem('token');
-    if (token) setEstaAutenticado(true);
+    const userData = localStorage.getItem('user');
+
+    if (token) {
+      setEstaAutenticado(true);
+      if (userData) {
+        setUser(JSON.parse(userData));
+      }
+    }
   }, []);
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setEstaAutenticado(false);
+    setUser(null);
+  };
 
   if (!estaAutenticado) {
-    return <Login onLoginSuccess={() => setEstaAutenticado(true)} />;
+    // ✅ 4. Recibir el usuario cuando el Login sea exitoso
+    return <Login onLoginSuccess={(userData) => {
+      setEstaAutenticado(true);
+      setUser(userData);
+    }} />;
   }
 
   return (
     <div className="flex min-h-screen bg-white dark:bg-[#191919]">
-      <Sidebar seccionActual={seccionActual} setSeccionActual={setSeccionActual} />
+      {/* ✅ 5. Ahora las variables user y handleLogout sí existen */}
+      <Sidebar
+        seccionActual={seccionActual}
+        setSeccionActual={setSeccionActual}
+        usuario={user}
+        onLogout={handleLogout}
+      />
 
       <main className="flex-1 min-w-0 overflow-y-auto">
         {seccionActual === 'inventario' && <DashboardInventario />}

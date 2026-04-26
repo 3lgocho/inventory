@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Plus } from 'lucide-react';
 import { obtenerUsuarios, registrarUsuario, actualizarUsuario } from "../../services/api";
 import { DataTable } from '../shared/DataTable';
 
@@ -86,14 +86,12 @@ export const AdminUsuarios = ({ rolActual = 'Admin' }) => {
         <div className="p-6 flex-1 relative" >
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-zinc-100">Gestión de Usuarios</h2>
-                <button onClick={abrirCrear} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-                    + Nuevo
+                <button onClick={abrirCrear} className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium">
+                    <Plus className="w-4 h-4" /> Nuevo
                 </button>
             </div>
 
             <DataTable columnas={columnas} data={usuarios} cargando={cargando} />
-
-            {/* --- MODAL RESTAURADO --- */}
             {modal.isOpen && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center">
                     <div className="bg-[#202020] border border-[#2e2e2e] rounded-lg shadow-2xl w-full max-w-md p-6">

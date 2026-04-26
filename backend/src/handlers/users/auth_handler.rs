@@ -17,6 +17,8 @@ pub struct LoginRequest {
 #[derive(Serialize)]
 pub struct LoginResponse {
     pub token: String,
+    pub username: String,
+    pub role: UserRole,
 }
 
 pub async fn login_user(
@@ -25,13 +27,13 @@ pub async fn login_user(
 ) -> Result<Json<LoginResponse>, (StatusCode, String)> {
 
     let user_record = sqlx::query!(
-        r#"SELECT id as "id!", password, role as "role!: UserRole" FROM users WHERE email = $1"#,
+        r#"SELECT id as "id!", name, password, role as "role!: UserRole" FROM users WHERE email = $1"#,
         payload.email
     )
     .fetch_one(&pool)
     .await
     .map_err(|_| (StatusCode::UNAUTHORIZED, "Credenciales incorrectas".to_string()))?;
-
+    
     let is_valid = verify(&payload.password, &user_record.password)
         .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Error interno de validación".to_string()))?;
 
@@ -62,5 +64,9 @@ pub async fn login_user(
     )
     .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Error al generar token".to_string()))?;
 
-    Ok(Json(LoginResponse{token}))
+    Ok(Json(LoginResponse {
+        token,
+        username: user_record.name,
+        role: user_record.role,
+    }))
 }

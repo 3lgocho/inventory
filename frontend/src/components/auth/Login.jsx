@@ -17,7 +17,11 @@ export const Login = ({ onLoginSuccess }) => {
         try {
             const data = await loginUsuario(email, password);
             localStorage.setItem('token', data.token);
-            onLoginSuccess();
+            const userData = data.user || data;
+
+            localStorage.setItem('user', JSON.stringify(userData));
+            onLoginSuccess(userData);
+
         } catch (err) {
             setError('Credenciales incorrectas o servidor inaccesible.');
         } finally {
@@ -64,7 +68,6 @@ export const Login = ({ onLoginSuccess }) => {
                                 className="w-full pl-3 pr-10 py-2 bg-zinc-50 dark:bg-[#191919] border border-zinc-200 dark:border-[#2e2e2e] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100 transition-colors"
                                 placeholder="••••••••"
                             />
-                            {/* --- BOTÓN DEL OJITO --- */}
                             <button
                                 type="button"
                                 onClick={() => setMostrarPassword(!mostrarPassword)}

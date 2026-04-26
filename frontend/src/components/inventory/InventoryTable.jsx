@@ -5,18 +5,16 @@ export const InventoryTable = ({ inventarioFiltrado, cargando, setItemSelecciona
     const columnasInventario = [
         {
             header: 'Nombre',
-            //thClassName: 'w-1/3',
             render: (item) => (
                 <div className="cursor-pointer font-medium flex items-center gap-2" onClick={() => setItemSeleccionado(item)}>
-                    {/*<span className="text-zinc-400 group-hover:text-blue-500">📄</span>*/}
                     {item.name || item.nombre}
                 </div>
             )
         },
         {
             header: 'Stock',
-            thClassName: 'text-center',
-            tdClassName: 'text-center font-medium',
+            thClassName: 'text-left',
+            tdClassName: 'text-left font-medium',
             render: (item) => item.total_amount || item.cantidad
 
         },
@@ -32,7 +30,7 @@ export const InventoryTable = ({ inventarioFiltrado, cargando, setItemSelecciona
             header: 'Ubicación',
             render: (item) => (
                 <select
-                    className="bg-transparent text-sm border border-transparent hover:border-zinc-300 dark:hover:border-zinc-600 rounded px-2 py-1 cursor-pointer focus:outline-none dark:text-zinc-300 dark:bg-[#202020]"
+                    className="bg-zinc-100 text-sm border border-transparent hover:border-zinc-300 dark:hover:border-zinc-600 rounded px-2 py-1 cursor-pointer focus:outline-none dark:text-zinc-300 dark:bg-[#202020]"
                     value={item.location || item.ubicacion}
                     onChange={(e) => handleMoverInline(item, e.target.value)}
                 >
